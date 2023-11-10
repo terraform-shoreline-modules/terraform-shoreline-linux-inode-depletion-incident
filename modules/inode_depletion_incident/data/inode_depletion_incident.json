@@ -1,0 +1,158 @@
+{
+  "name": "inode_depletion_incident",
+  "description": "Inode depletion is an incident that occurs when the number of available inodes on a file system is exhausted. Inodes are data structures used to store information about each file and directory in a file system. When an inode is created, it is assigned a unique identifier which is used to access and manage the file or directory. If the file system runs out of inodes, it can cause issues such as preventing file creation or causing other file system errors. This can lead to system instability and affect users' ability to access and use files and data.",
+  "params": [
+    {
+      "name": "FILE_SYSTEM_PATH",
+      "value": ""
+    },
+    {
+      "name": "PATH_TO_ARCHIVE_DIRECTORY",
+      "value": ""
+    },
+    {
+      "name": "INODE_LIMIT",
+      "value": ""
+    },
+    {
+      "name": "PATH_TO_OTHER_FILE_SYSTEM",
+      "value": ""
+    },
+    {
+      "name": "FILESYSTEM_PATH",
+      "value": ""
+    },
+    {
+      "name": "PATH_TO_LOG_FILE",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Inode Depletion Incident.\nInode depletion is an incident that occurs when the number of available inodes on a file system is exhausted. Inodes are data structures used to store information about each file and directory in a file system. When an inode is created, it is assigned a unique identifier which is used to access and manage the file or directory. If the file system runs out of inodes, it can cause issues such as preventing file creation or causing other file system errors. This can lead to system instability and affect users' ability to access and use files and data."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the number of inodes used and available for the filesystem where the incident occurred"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `df -i ${FILESYSTEM_PATH}`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the number of inodes used and available for all mounted filesystems"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `df -i`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check which directories are using the most inodes"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo find ${FILESYSTEM_PATH} -xdev -type f | cut -d \"/\" -f 2 | sort | uniq -c | sort -n`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check which files are using the most inodes"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo find ${FILESYSTEM_PATH} -xdev -type f | cut -d \"/\" -f 2- | grep -v \"/$\" | sort | uniq -c | sort -rn | head`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check which users are using the most inodes"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo find ${FILESYSTEM_PATH} -xdev -printf '%u\\n' | sort | uniq -c | sort -n`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any large log files that could be deleted to free up inodes"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo find ${FILESYSTEM_PATH} -xdev -type f -name \"*.log\" -size +100M -exec ls -lh {} \\;`"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any large temporary files that could be deleted to free up inodes"
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo find ${FILESYSTEM_PATH} -xdev -type f -name \"*.tmp\" -size +100M -exec ls -lh {} \\;`"
+    },
+    {
+      "name": "cell_16",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Increase the inode limit of the file system by resizing the file system or by using the tune2fs command."
+    },
+    {
+      "name": "cell_17",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_fs_resize_inode($FILE_SYSTEM_PATH, $INODE_LIMIT)"
+    },
+    {
+      "name": "cell_18",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Determine which files and directories can be deleted, archived or moved to another file system to free up inodes."
+    },
+    {
+      "name": "cell_19",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_inode_remediation($PATH_TO_ARCHIVE_DIRECTORY, $PATH_TO_OTHER_FILE_SYSTEM, $PATH_TO_LOG_FILE)"
+    }
+  ]
+}
